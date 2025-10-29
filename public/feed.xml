@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>枫知屿</title>
+        <link>http://localhost:3000</link>
+        <description>在数字世界里，寻找代码与诗意的交汇点</description>
+        <lastBuildDate>Wed, 29 Oct 2025 08:43:00 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <language>zh-CN</language>
+        <atom:link href="http://localhost:3000/feed.xml" rel="self" type="application/rss+xml"/>
+        <item>
+            <title><![CDATA[测试目录功能]]></title>
+            <link>http://localhost:3000/posts/2025-01-test-toc</link>
+            <guid>http://localhost:3000/posts/2025-01-test-toc</guid>
+            <pubDate>Wed, 29 Jan 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[一篇用于测试目录和返回顶部功能的示例文章。]]></description>
+        </item>
+        <item>
+            <title><![CDATA[再来一篇]]></title>
+            <link>http://localhost:3000/posts/2025-01-another-post</link>
+            <guid>http://localhost:3000/posts/2025-01-another-post</guid>
+            <pubDate>Fri, 10 Jan 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[第二篇示例文章，用于测试排序与归档。]]></description>
+        </item>
+        <item>
+            <title><![CDATA[你好，世界]]></title>
+            <link>http://localhost:3000/posts/2025-01-hello-world</link>
+            <guid>http://localhost:3000/posts/2025-01-hello-world</guid>
+            <pubDate>Thu, 02 Jan 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[一篇示例文章，用于验证列表与详情展示。]]></description>
+        </item>
+    </channel>
+</rss>

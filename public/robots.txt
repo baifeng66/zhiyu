@@ -1,0 +1,6 @@
+# 中文注释：允许所有爬虫抓取，并声明站点地图位置。
+User-agent: *
+Allow: /
+
+Sitemap: /sitemap.xml
+

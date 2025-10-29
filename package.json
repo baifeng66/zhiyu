@@ -1,0 +1,39 @@
+{
+  "name": "zhiyu",
+  "version": "1.0.0",
+  "description": "知屿 - 极简但功能完备的静态博客，支持UUID URL和自动部署",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "postbuild": "node scripts/generate-feeds.mjs",
+    "new-post": "node scripts/create-post.js",
+    "deploy": "./scripts/deploy.sh"
+  },
+  "dependencies": {
+    "@types/cheerio": "^0.22.35",
+    "cheerio": "^1.1.2",
+    "date-fns": "^3.6.0",
+    "feed": "^4.2.2",
+    "gray-matter": "^4.0.3",
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.5.0",
+    "rehype": "^13.0.1",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-prism-plus": "^2.0.0",
+    "rehype-slug": "^6.0.0",
+    "rehype-stringify": "^10.0.0",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.0",
+    "remark-rehype": "^11.1.1",
+    "unified": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.66",
+    "typescript": "^5.6.2"
+  }
+}
