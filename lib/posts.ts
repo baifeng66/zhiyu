@@ -27,18 +27,70 @@ export function getPostSlugs(): string[] {
     .map((f) => f.replace(/\.(md|mdx)$/i, ""));
 }
 
+// 智能生成摘要
+function generateExcerpt(content: string, maxLength: number = 120): string {
+  // 移除Markdown语法
+  const cleanContent = content
+    .replace(/^#+\s+/gm, '') // 移除标题
+    .replace(/\*\*(.*?)\*\*/g, '$1') // 移除粗体
+    .replace(/\*(.*?)\*/g, '$1') // 移除斜体
+    .replace(/`(.*?)`/g, '$1') // 移除行内代码
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 移除链接，保留文本
+    .replace(/```[\s\S]*?```/g, '') // 移除代码块
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '') // 移除图片
+    .replace(/^\s*[-*+]\s+/gm, '') // 移除列表项
+    .replace(/^\s*\d+\.\s+/gm, '') // 移除有序列表
+    .replace(/^\s*>\s+/gm, '') // 移除引用
+    .replace(/\n+/g, ' ') // 换行转为空格
+    .trim();
+
+  // 如果内容本身就很短，直接返回
+  if (cleanContent.length <= maxLength) {
+    return cleanContent;
+  }
+
+  // 尝试在句号、感叹号或问号处截断
+  const punctuation = /[。！？.!?]/;
+  let bestCut = maxLength;
+
+  for (let i = maxLength; i > maxLength * 0.6; i--) {
+    if (punctuation.test(cleanContent[i])) {
+      bestCut = i + 1;
+      break;
+    }
+  }
+
+  const excerpt = cleanContent.substring(0, bestCut);
+  return excerpt + '...';
+}
+
 export function readPostBySlug(slug: string): Post {
   const fullPathMd = path.join(postsDir, `${slug}.md`);
   const fullPathMdx = path.join(postsDir, `${slug}.mdx`);
   const realPath = fs.existsSync(fullPathMd) ? fullPathMd : fullPathMdx;
   const raw = fs.readFileSync(realPath, "utf-8");
   const { data, content } = matter(raw);
+
+  // 智能处理description
+  let description: string | null = null;
+  if (data.description) {
+    description = String(data.description);
+  } else if (content.trim()) {
+    // 自动生成摘要，限制长度以便在一行显示
+    description = generateExcerpt(content, 60);
+  }
+
+  // 生成稳定的UUID：优先使用文件中的UUID，否则基于内容和slug生成
+  const uuid = data.uuid
+    ? String(data.uuid)
+    : generateShortUUID(`${slug}-${content}-${data.title || slug}`);
+
   const meta: PostMeta = {
     slug,
-    uuid: data.uuid ? String(data.uuid) : generateShortUUID(),
+    uuid,
     title: String(data.title || slug),
     date: new Date(data.date || Date.now()).toISOString(),
-    description: data.description ? String(data.description) : null,
+    description,
     tags: Array.isArray(data.tags) ? data.tags.map(String) : undefined,
     draft: Boolean(data.draft || false),
   };

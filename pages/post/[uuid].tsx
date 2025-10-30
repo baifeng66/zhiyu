@@ -8,7 +8,10 @@ import { useEffect, useState } from "react";
 import * as cheerio from "cheerio";
 import { FaMoon, FaSun, FaBars, FaTimes } from "react-icons/fa";
 import BackToTop from "../../components/BackToTop";
+import DailyQuote from "../../components/DailyQuote";
+import useCodeCopy from "../../hooks/useCodeCopy";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 
 interface TocItem {
   id: string;
@@ -42,7 +45,7 @@ export default function PostPage({ post, html }: Props) {
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
-  // 生成目录
+  // 生成目录并渲染Mermaid图表
   useEffect(() => {
     const $ = cheerio.load(html);
     const tocItems: TocItem[] = [];
@@ -59,8 +62,84 @@ export default function PostPage({ post, html }: Props) {
     setToc(tocItems);
 
     // 更新HTML内容
-    document.querySelector('.post-content')!.innerHTML = $.html();
+    const contentElement = document.querySelector('.post-content');
+    if (contentElement) {
+      contentElement.innerHTML = $.html();
+
+      // 渲染Mermaid图表
+      const mermaidElements = contentElement.querySelectorAll('pre code.language-mermaid');
+      if (mermaidElements.length > 0) {
+        // 动态导入mermaid避免SSR问题
+        import('mermaid').then((mermaid) => {
+          // 初始化mermaid
+          mermaid.default.initialize({
+            startOnLoad: false,
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default',
+            securityLevel: 'loose',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            flowchart: {
+              useMaxWidth: true,
+              htmlLabels: true,
+              curve: 'basis'
+            }
+          });
+
+          let mermaidIndex = 0;
+          mermaidElements.forEach((element) => {
+            const codeElement = element as HTMLElement;
+            let code = codeElement.textContent || '';
+
+            // 清理代码，确保格式正确
+            code = code.trim();
+
+            // 创建唯一的ID
+            const elementId = `mermaid-graph-${Date.now()}-${mermaidIndex}`;
+
+            // 创建容器
+            const container = document.createElement('div');
+            container.className = 'mermaid-container';
+
+            // 创建mermaid元素
+            const mermaidDiv = document.createElement('div');
+            mermaidDiv.className = 'mermaid';
+            mermaidDiv.id = elementId;
+            mermaidDiv.textContent = code;
+
+            // 替换pre标签
+            const preElement = codeElement.parentElement;
+            if (preElement) {
+              preElement.parentNode?.replaceChild(container, preElement);
+            }
+
+            container.appendChild(mermaidDiv);
+
+            // 使用render方法
+            mermaid.default.render(elementId, code)
+              .then((result: { svg: string }) => {
+                // 清空容器并插入SVG
+                container.innerHTML = result.svg;
+              })
+              .catch((error: Error) => {
+                console.error('Mermaid rendering error:', error);
+                console.error('Mermaid code:', code);
+                container.innerHTML = `<pre class="error">Mermaid图表渲染失败: ${error.message}</pre>`;
+              });
+
+            mermaidIndex++;
+          });
+        }).catch((error) => {
+          console.error('Failed to load mermaid:', error);
+        });
+      }
+    }
   }, [html]);
+
+  // 启用代码复制功能
+  useCodeCopy({
+    containerClass: 'post-content',
+    buttonPosition: 'top-right',
+    showText: true
+  });
 
   // 跳转到目录项
   const scrollToHeading = (id: string) => {
@@ -164,9 +243,16 @@ export default function PostPage({ post, html }: Props) {
       </div>
 
       <footer className="site-footer">
-        <a href="/feed.xml">RSS</a>
-        <a href="/sitemap.xml">Sitemap</a>
-        <span>© {new Date().getFullYear()} {siteConfig.author}</span>
+        <div className="site-footer-links">
+          <a href="/feed.xml">RSS 订阅</a>
+          <DailyQuote />
+          <a href="/sitemap.xml">网站地图</a>
+        </div>
+        <div className="site-footer-copyright">
+          <span>© {new Date().getFullYear()} {siteConfig.author}</span>
+          <span className="site-footer-heart"> ❤️ </span>
+          <span>用心记录，用爱发电</span>
+        </div>
       </footer>
       <BackToTop />
     </div>
