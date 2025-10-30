@@ -3,5 +3,11 @@
   "outputDirectory": "out",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["hkg1"]
+  "regions": ["hkg1"],
+  "rewrites": [
+    {
+      "source": "/((?!_next|api|favicon\\.svg|feed\\.xml|sitemap\\.xml|robots\\.txt).*)",
+      "destination": "/$1.html"
+    }
+  ]
 }
