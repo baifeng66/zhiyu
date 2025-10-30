@@ -2,26 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>http://localhost:3000/</loc>
-    <lastmod>2025-10-29T08:43:00.179Z</lastmod>
+    <lastmod>2025-10-30T15:22:20.063Z</lastmod>
   </url>
   <url>
     <loc>http://localhost:3000/archives</loc>
-    <lastmod>2025-10-29T08:43:00.179Z</lastmod>
+    <lastmod>2025-10-30T15:22:20.063Z</lastmod>
   </url>
   <url>
     <loc>http://localhost:3000/about</loc>
-    <lastmod>2025-10-29T08:43:00.179Z</lastmod>
+    <lastmod>2025-10-30T15:22:20.063Z</lastmod>
   </url>
   <url>
-    <loc>http://localhost:3000/posts/2025-01-test-toc</loc>
-    <lastmod>2025-10-29T08:43:00.179Z</lastmod>
+    <loc>http://localhost:3000/posts/2025-10-30-text-to-sql-journey</loc>
+    <lastmod>2025-10-30T15:22:20.063Z</lastmod>
   </url>
   <url>
-    <loc>http://localhost:3000/posts/2025-01-another-post</loc>
-    <lastmod>2025-10-29T08:43:00.179Z</lastmod>
+    <loc>http://localhost:3000/posts/2025-10-25-nextjs-blog</loc>
+    <lastmod>2025-10-30T15:22:20.063Z</lastmod>
   </url>
   <url>
-    <loc>http://localhost:3000/posts/2025-01-hello-world</loc>
-    <lastmod>2025-10-29T08:43:00.179Z</lastmod>
+    <loc>http://localhost:3000/posts/2025-10-20-react-hooks</loc>
+    <lastmod>2025-10-30T15:22:20.063Z</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:3000/posts/2025-10-15-prompt-engineering</loc>
+    <lastmod>2025-10-30T15:22:20.063Z</lastmod>
   </url>
 </urlset>

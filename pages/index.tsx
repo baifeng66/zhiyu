@@ -5,17 +5,21 @@ import { getAllPosts, PostMeta } from "../lib/posts";
 import { canonicalUrl, websiteJsonLd } from "../lib/meta";
 import { siteConfig } from "../lib/site.config";
 import { useEffect, useState } from "react";
-import { FaMoon, FaSun } from "react-icons/fa";
+import { FaMoon, FaSun, FaSearch, FaTimes } from "react-icons/fa";
 import BackToTop from "../components/BackToTop";
+import SearchBar from "../components/SearchBar";
+import DailyQuote from "../components/DailyQuote";
 
 type Props = {
   posts: PostMeta[];
+  searchPosts: PostMeta[];
 };
 
 // 中文注释：首页列表，极简呈现"标题 + 日期"。
-export default function Home({ posts }: Props) {
+export default function Home({ posts, searchPosts }: Props) {
   const url = canonicalUrl("/");
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // 初始化主题
   useEffect(() => {
@@ -55,7 +59,15 @@ export default function Home({ posts }: Props) {
           <nav className="site-nav">
             <Link href="/">首页</Link>
             <Link href="/archives">归档</Link>
+            <Link href="/tags">标签</Link>
             <Link href="/about">关于</Link>
+            <button
+              className="search-trigger"
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="打开搜索"
+            >
+              <FaSearch />
+            </button>
           </nav>
           <button
             className="theme-toggle"
@@ -67,27 +79,98 @@ export default function Home({ posts }: Props) {
         </div>
       </header>
       <main>
-        <ul className="post-list">
+        <div className="post-grid">
           {posts.map((p) => (
-            <li key={p.uuid}>
-              <Link className="post-title" href={`/post/${p.uuid}`}>{p.title}</Link>
-              <span className="post-date">{new Date(p.date).toISOString().slice(0, 10)}</span>
-            </li>
+            <article key={p.uuid} className="post-card">
+              <div className="post-card-header">
+                <h2 className="post-card-title">
+                  <Link href={`/post/${p.uuid}`}>{p.title}</Link>
+                </h2>
+              </div>
+
+              <div className="post-card-content">
+                {p.description ? (
+                  <p className="post-card-excerpt">
+                    {p.description}
+                  </p>
+                ) : (
+                  <p className="post-card-excerpt">
+                    点击查看完整内容...
+                  </p>
+                )}
+              </div>
+
+              <div className="post-card-meta">
+                <time className="post-card-date">
+                  {new Date(p.date).toLocaleDateString('zh-CN', {
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </time>
+              </div>
+
+              {p.tags && p.tags.length > 0 && (
+                <div className="post-card-tags">
+                  {p.tags.slice(0, 2).map((tag, index) => (
+                    <span key={index} className="post-card-tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="post-card-footer">
+                <Link href={`/post/${p.uuid}`} className="read-more-btn">
+                  阅读更多 →
+                </Link>
+              </div>
+            </article>
           ))}
-        </ul>
+        </div>
       </main>
       <footer className="site-footer">
-        <a href="/feed.xml">RSS</a>
-        <a href="/sitemap.xml">Sitemap</a>
-        <span>© {new Date().getFullYear()} {siteConfig.author}</span>
+        <div className="site-footer-links">
+          <a href="/feed.xml">RSS 订阅</a>
+          <DailyQuote />
+          <a href="/sitemap.xml">网站地图</a>
+        </div>
+        <div className="site-footer-copyright">
+          <span>© {new Date().getFullYear()} {siteConfig.author}</span>
+          <span className="site-footer-heart"> ❤️ </span>
+          <span>用心记录，用爱发电</span>
+        </div>
       </footer>
       <BackToTop />
+
+      {/* 悬浮搜索框 */}
+      {isSearchOpen && (
+        <div className="search-overlay" onClick={() => setIsSearchOpen(false)}>
+          <div className="search-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="search-modal-header">
+              <h3>搜索文章</h3>
+              <button
+                className="search-modal-close"
+                onClick={() => setIsSearchOpen(false)}
+                aria-label="关闭搜索"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <SearchBar
+              placeholder="搜索技术笔记..."
+              posts={searchPosts}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
-  const posts = getAllPosts(false).map(({ content, ...meta }) => meta);
-  return { props: { posts } };
+  const allPosts = getAllPosts(false);
+  const posts = allPosts.map(({ content, ...meta }) => meta);
+  const searchPosts = allPosts.map(({ content, ...meta }) => meta); // 用于搜索的数据
+  return { props: { posts, searchPosts } };
 };
 

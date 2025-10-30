@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { GetStaticPaths, GetStaticProps } from "next";
-import { getAllPosts, getPostByUUID, getPostUUIDs, Post } from "../../lib/posts";
+import { getAllPosts, getPostByUUID, getPostUUIDs, Post, PostMeta } from "../../lib/posts";
 import { articleJsonLd, canonicalUrl } from "../../lib/meta";
 import { markdownToHtml } from "../../lib/markdown";
 import { siteConfig } from "../../lib/site.config";
@@ -9,6 +9,7 @@ import * as cheerio from "cheerio";
 import { FaMoon, FaSun, FaBars, FaTimes } from "react-icons/fa";
 import BackToTop from "../../components/BackToTop";
 import DailyQuote from "../../components/DailyQuote";
+import PostNavigation from "../../components/PostNavigation";
 import useCodeCopy from "../../hooks/useCodeCopy";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -19,10 +20,10 @@ interface TocItem {
   level: number;
 }
 
-type Props = { post: Post; html: string };
+type Props = { post: Post; html: string; allPosts: PostMeta[] };
 
 // 中文注释：文章详情页，基于UUID访问，构建期将 Markdown 转为 HTML，添加目录和返回顶部功能。
-export default function PostPage({ post, html }: Props) {
+export default function PostPage({ post, html, allPosts }: Props) {
   const url = canonicalUrl(`/post/${post.uuid}`);
   const [toc, setToc] = useState<TocItem[]>([]);
   const [isTocCollapsed, setIsTocCollapsed] = useState(false);
@@ -242,6 +243,13 @@ export default function PostPage({ post, html }: Props) {
         </article>
       </div>
 
+      {/* 上一篇/下一篇导航 */}
+      <PostNavigation
+        currentPost={post}
+        allPosts={allPosts}
+        className="post-navigation-section"
+      />
+
       <footer className="site-footer">
         <div className="site-footer-links">
           <a href="/feed.xml">RSS 订阅</a>
@@ -270,6 +278,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
   const uuid = String(params?.uuid);
   const post = getPostByUUID(uuid);
+  const allPosts = getAllPosts(false).map(({ content, ...meta }) => meta);
 
   if (!post || post.draft) {
     // 中文注释：生产环境剔除草稿。
@@ -277,5 +286,5 @@ export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
   }
 
   const html = await markdownToHtml(post.content);
-  return { props: { post, html } };
+  return { props: { post, html, allPosts } };
 };

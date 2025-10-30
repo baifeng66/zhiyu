@@ -5,15 +5,17 @@ import { getAllPosts, groupPostsByYear, PostMeta } from "../../lib/posts";
 import { canonicalUrl } from "../../lib/meta";
 import { siteConfig } from "../../lib/site.config";
 import { useEffect, useState } from "react";
-import { FaMoon, FaSun } from "react-icons/fa";
+import { FaMoon, FaSun, FaChevronDown, FaChevronRight } from "react-icons/fa";
 import BackToTop from "../../components/BackToTop";
+import DailyQuote from "../../components/DailyQuote";
 
 type Props = { groups: [string, PostMeta[]][] };
 
-// 中文注释：归档页，按年份分组。
+// 中文注释：归档页，按年份分组，支持折叠。
 export default function ArchivesPage({ groups }: Props) {
   const url = canonicalUrl("/archives");
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [collapsedYears, setCollapsedYears] = useState<Set<string>>(new Set());
 
   // 初始化主题
   useEffect(() => {
@@ -32,6 +34,19 @@ export default function ArchivesPage({ groups }: Props) {
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
+  // 切换年份折叠状态
+  const toggleYear = (year: string) => {
+    setCollapsedYears(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(year)) {
+        newSet.delete(year);
+      } else {
+        newSet.add(year);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <div className="container">
       <Head>
@@ -44,6 +59,7 @@ export default function ArchivesPage({ groups }: Props) {
           <nav className="site-nav">
             <Link href="/">首页</Link>
             <Link href="/archives">归档</Link>
+            <Link href="/tags">标签</Link>
             <Link href="/about">关于</Link>
           </nav>
           <button
@@ -56,24 +72,65 @@ export default function ArchivesPage({ groups }: Props) {
         </div>
       </header>
       <main>
-        {groups.map(([year, items]) => (
-          <section key={year}>
-            <h2 id={`year-${year}`}>{year}</h2>
-            <ul className="post-list">
-              {items.map((p) => (
-                <li key={p.uuid}>
-                  <Link className="post-title" href={`/post/${p.uuid}`}>{p.title}</Link>
-                  <span className="post-date">{new Date(p.date).toISOString().slice(0, 10)}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        <div className="archives-container">
+          {groups.map(([year, items]) => (
+            <div key={year} className="year-section">
+              <div
+                className="year-header"
+                onClick={() => toggleYear(year)}
+              >
+                {collapsedYears.has(year) ? <FaChevronRight /> : <FaChevronDown />}
+                <h2>{year}年</h2>
+                <span className="year-count">{items.length}篇</span>
+              </div>
+
+              {!collapsedYears.has(year) && (
+                <div className="post-grid">
+                  {items.map((p) => (
+                    <article key={p.uuid} className="post-card">
+                      <div className="post-card-header">
+                        <h2 className="post-card-title">
+                          <Link href={`/post/${p.uuid}`}>{p.title}</Link>
+                        </h2>
+                      </div>
+
+                      <div className="post-card-meta">
+                        <time className="post-card-date">
+                          {new Date(p.date).toLocaleDateString('zh-CN', {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </time>
+                      </div>
+
+                      {p.tags && p.tags.length > 0 && (
+                        <div className="post-card-tags">
+                          {p.tags.slice(0, 2).map((tag, index) => (
+                            <span key={index} className="post-card-tag">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </main>
       <footer className="site-footer">
-        <a href="/feed.xml">RSS</a>
-        <a href="/sitemap.xml">Sitemap</a>
-        <span>© {new Date().getFullYear()} {siteConfig.author}</span>
+        <div className="site-footer-links">
+          <a href="/feed.xml">RSS 订阅</a>
+          <DailyQuote />
+          <a href="/sitemap.xml">网站地图</a>
+        </div>
+        <div className="site-footer-copyright">
+          <span>© {new Date().getFullYear()} {siteConfig.author}</span>
+          <span className="site-footer-heart"> ❤️ </span>
+          <span>用心记录，用爱发电</span>
+        </div>
       </footer>
       <BackToTop />
     </div>
