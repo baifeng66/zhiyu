@@ -1,21 +1,45 @@
 import Head from "next/head";
 import Link from "next/link";
 import { GetStaticProps } from "next";
-import { getAllPosts, groupPostsByYear, PostMeta } from "../../lib/posts";
+import type { PostMeta } from "../../lib/posts";
 import { canonicalUrl } from "../../lib/meta";
 import { siteConfig } from "../../lib/site.config";
-import { useEffect, useState } from "react";
-import { FaMoon, FaSun, FaChevronDown, FaChevronRight } from "react-icons/fa";
+import { useEffect, useMemo, useState } from "react";
+import { FaMoon, FaSun, FaMagic } from "react-icons/fa";
 import BackToTop from "../../components/BackToTop";
 import DailyQuote from "../../components/DailyQuote";
+import type { TagInfo } from "../../lib/tags";
+import TagCloud from "../../components/TagCloud";
+import { useRouter } from "next/router";
+import { format } from "date-fns";
 
-type Props = { groups: [string, PostMeta[]][] };
+type Props = { groups: [string, PostMeta[]][], posts: PostMeta[], tags: TagInfo[] };
 
 // 中文注释：归档页，按年份分组，支持折叠。
-export default function ArchivesPage({ groups }: Props) {
+export default function ArchivesPage({ groups, posts, tags }: Props) {
   const url = canonicalUrl("/archives");
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [collapsedYears, setCollapsedYears] = useState<Set<string>>(new Set());
+  const [bgOn, setBgOn] = useState(false);
+  const router = useRouter();
+  const selectedTag = (router.query.tag as string) || '';
+
+  // 根据选中标签生成分组视图
+  const displayGroups = useMemo(() => {
+    const source = selectedTag
+      ? posts.filter(p => (p.tags || []).includes(selectedTag))
+      : posts;
+    const gm: Record<string, PostMeta[]> = {};
+    source.forEach((p) => {
+      const y = new Date(p.date).getFullYear().toString();
+      (gm[y] ||= []).push(p);
+    });
+    Object.keys(gm).forEach((y) => {
+      gm[y].sort((a, b) => +new Date(b.date) - +new Date(a.date));
+    });
+    return Object.keys(gm)
+      .sort((a, b) => Number(b) - Number(a))
+      .map(y => [y, gm[y]] as [string, PostMeta[]]);
+  }, [selectedTag, posts]);
 
   // 初始化主题
   useEffect(() => {
@@ -24,6 +48,7 @@ export default function ArchivesPage({ groups }: Props) {
     const initialTheme = savedTheme || systemTheme;
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
+    setBgOn(localStorage.getItem('bgEffectEnabled') === 'true');
   }, []);
 
   // 切换主题
@@ -34,17 +59,11 @@ export default function ArchivesPage({ groups }: Props) {
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
-  // 切换年份折叠状态
-  const toggleYear = (year: string) => {
-    setCollapsedYears(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(year)) {
-        newSet.delete(year);
-      } else {
-        newSet.add(year);
-      }
-      return newSet;
-    });
+  const toggleBg = () => {
+    const enabled = !(localStorage.getItem('bgEffectEnabled') === 'true');
+    localStorage.setItem('bgEffectEnabled', String(enabled));
+    setBgOn(enabled);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('bg-effect-changed'));
   };
 
   return (
@@ -54,12 +73,14 @@ export default function ArchivesPage({ groups }: Props) {
         <link rel="canonical" href={url} />
       </Head>
       <header className="site-header">
-        <div className="site-title"><Link href="/">{siteConfig.title}</Link></div>
+        <div className="site-title">
+          <img src="/favicon.svg" alt="网站图标" className="site-logo" />
+          <Link href="/">{siteConfig.title}</Link>
+        </div>
         <div className="site-header-controls">
           <nav className="site-nav">
             <Link href="/">首页</Link>
             <Link href="/archives">归档</Link>
-            <Link href="/tags">标签</Link>
             <Link href="/about">关于</Link>
           </nav>
           <button
@@ -69,54 +90,35 @@ export default function ArchivesPage({ groups }: Props) {
           >
             {theme === 'light' ? <FaMoon /> : <FaSun />}
           </button>
+          <button
+            className="bg-toggle"
+            onClick={toggleBg}
+            aria-label="切换背景特效"
+            title={bgOn ? '关闭背景特效' : '开启背景特效（低频柔和）'}
+          >
+            <FaMagic />
+          </button>
         </div>
       </header>
       <main>
+        {/* 标签云（归档页顶部，紧凑小号，无标题） */}
+        <section className="tag-cloud tags-cloud-compact">
+          <TagCloud tags={tags} limit={80} showCount={true} compact />
+        </section>
+
         <div className="archives-container">
-          {groups.map(([year, items]) => (
-            <div key={year} className="year-section">
-              <div
-                className="year-header"
-                onClick={() => toggleYear(year)}
-              >
-                {collapsedYears.has(year) ? <FaChevronRight /> : <FaChevronDown />}
-                <h2>{year}年</h2>
-                <span className="year-count">{items.length}篇</span>
-              </div>
-
-              {!collapsedYears.has(year) && (
-                <div className="post-grid">
-                  {items.map((p) => (
-                    <article key={p.uuid} className="post-card">
-                      <div className="post-card-header">
-                        <h2 className="post-card-title">
-                          <Link href={`/post/${p.uuid}`}>{p.title}</Link>
-                        </h2>
-                      </div>
-
-                      <div className="post-card-meta">
-                        <time className="post-card-date">
-                          {new Date(p.date).toLocaleDateString('zh-CN', {
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </time>
-                      </div>
-
-                      {p.tags && p.tags.length > 0 && (
-                        <div className="post-card-tags">
-                          {p.tags.slice(0, 2).map((tag, index) => (
-                            <span key={index} className="post-card-tag">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </article>
-                  ))}
-                </div>
-              )}
-            </div>
+          {displayGroups.map(([year, items]) => (
+            <section key={year} className="archive-year">
+              <h2 className="archive-year-title">{year} 年</h2>
+              <ul className="archive-year-list">
+                {items.map((p) => (
+                  <li key={p.uuid} className="archive-item">
+                    <time className="archive-item-date">{format(new Date(p.date), "MM月dd日")}</time>
+                    <Link href={`/post/${p.uuid}`} className="archive-item-title">{p.title}</Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
         </div>
       </main>
@@ -138,11 +140,15 @@ export default function ArchivesPage({ groups }: Props) {
 }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
-  const posts = getAllPosts(false).map(({ content, ...meta }) => meta);
-  const grouped = groupPostsByYear(posts);
+  const { getAllPosts, groupPostsByYear } = await import("../../lib/posts");
+  const { getAllTags } = await import("../../lib/tags");
+  const all = getAllPosts(false).map(({ content, ...meta }) => meta);
+  const grouped = groupPostsByYear(all);
   const groups = Object.keys(grouped)
     .sort((a, b) => Number(b) - Number(a))
     .map((y) => [y, grouped[y]] as [string, PostMeta[]]);
-  return { props: { groups } };
+  const tagsRaw = getAllTags();
+  const showAll = { name: 'show all', count: all.length, posts: all } as TagInfo;
+  const tags = [showAll, ...tagsRaw];
+  return { props: { groups, posts: all, tags } };
 };
-

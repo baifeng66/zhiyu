@@ -1,18 +1,19 @@
 import Head from "next/head";
 import { GetStaticPaths, GetStaticProps } from "next";
-import { getAllPosts, getPostByUUID, getPostUUIDs, Post, PostMeta } from "../../lib/posts";
+import type { Post, PostMeta } from "../../lib/posts";
 import { articleJsonLd, canonicalUrl } from "../../lib/meta";
 import { markdownToHtml } from "../../lib/markdown";
 import { siteConfig } from "../../lib/site.config";
 import { useEffect, useState } from "react";
 import * as cheerio from "cheerio";
-import { FaMoon, FaSun, FaBars, FaTimes } from "react-icons/fa";
+import { FaMoon, FaSun, FaBars, FaTimes, FaMagic } from "react-icons/fa";
 import BackToTop from "../../components/BackToTop";
 import DailyQuote from "../../components/DailyQuote";
 import PostNavigation from "../../components/PostNavigation";
 import useCodeCopy from "../../hooks/useCodeCopy";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { format } from "date-fns";
 
 interface TocItem {
   id: string;
@@ -28,6 +29,7 @@ export default function PostPage({ post, html, allPosts }: Props) {
   const [toc, setToc] = useState<TocItem[]>([]);
   const [isTocCollapsed, setIsTocCollapsed] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [bgOn, setBgOn] = useState(false);
 
   // 初始化主题
   useEffect(() => {
@@ -36,6 +38,7 @@ export default function PostPage({ post, html, allPosts }: Props) {
     const initialTheme = savedTheme || systemTheme;
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
+    setBgOn(localStorage.getItem('bgEffectEnabled') === 'true');
   }, []);
 
   // 切换主题
@@ -46,20 +49,32 @@ export default function PostPage({ post, html, allPosts }: Props) {
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
+  const toggleBg = () => {
+    const enabled = !(localStorage.getItem('bgEffectEnabled') === 'true');
+    localStorage.setItem('bgEffectEnabled', String(enabled));
+    setBgOn(enabled);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('bg-effect-changed'));
+  };
+
   // 生成目录并渲染Mermaid图表
   useEffect(() => {
     const $ = cheerio.load(html);
-    const tocItems: TocItem[] = [];
 
+    // 如果首个 h1 与页面标题相同，则移除，避免重复标题
+    const firstH1 = $('h1').first();
+    if (firstH1.length && firstH1.text().trim() === post.title.trim()) {
+      firstH1.remove();
+    }
+
+    // 构建目录（移除首个重复 h1 后再收集）
+    const tocItems: TocItem[] = [];
     $('h1, h2, h3, h4, h5, h6').each((index, element) => {
       const level = parseInt((element as any).tagName.substring(1));
       const text = $(element).text();
       const id = text.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-');
-
       $(element).attr('id', id);
       tocItems.push({ id, text, level });
     });
-
     setToc(tocItems);
 
     // 更新HTML内容
@@ -133,7 +148,7 @@ export default function PostPage({ post, html, allPosts }: Props) {
         });
       }
     }
-  }, [html]);
+  }, [html, post.title]);
 
   // 启用代码复制功能
   useCodeCopy({
@@ -184,7 +199,10 @@ export default function PostPage({ post, html, allPosts }: Props) {
       </Head>
 
       <header className="site-header">
-        <div className="site-title"><Link href="/">{siteConfig.title}</Link></div>
+        <div className="site-title">
+          <img src="/favicon.svg" alt="网站图标" className="site-logo" />
+          <Link href="/">{siteConfig.title}</Link>
+        </div>
         <div className="site-header-controls">
           <nav className="site-nav">
             <Link href="/">首页</Link>
@@ -197,6 +215,14 @@ export default function PostPage({ post, html, allPosts }: Props) {
             aria-label="切换主题"
           >
             {theme === 'light' ? <FaMoon /> : <FaSun />}
+          </button>
+          <button
+            className="bg-toggle"
+            onClick={toggleBg}
+            aria-label="切换背景特效"
+            title={bgOn ? '关闭背景特效' : '开启背景特效（低频柔和）'}
+          >
+            <FaMagic />
           </button>
         </div>
       </header>
@@ -235,9 +261,11 @@ export default function PostPage({ post, html, allPosts }: Props) {
 
         {/* 文章内容 */}
         <article className="post">
-          <h1>{post.title}</h1>
-          <div className="post-info">
-            <time dateTime={post.date}>{new Date(post.date).toISOString().slice(0, 10)}</time>
+          <div className="post-header-line">
+            <h1>{post.title}</h1>
+            <div className="post-info">
+              <time dateTime={post.date}>{format(new Date(post.date), "yyyy年 MM月dd日")}</time>
+            </div>
           </div>
           <div className="post-content" dangerouslySetInnerHTML={{ __html: html }} />
         </article>
@@ -268,6 +296,7 @@ export default function PostPage({ post, html, allPosts }: Props) {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
+  const { getPostUUIDs } = await import("../../lib/posts");
   const uuids = getPostUUIDs();
   return {
     paths: uuids.map((uuid) => ({ params: { uuid } })),
@@ -276,6 +305,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
+  const { getPostByUUID, getAllPosts } = await import("../../lib/posts");
   const uuid = String(params?.uuid);
   const post = getPostByUUID(uuid);
   const allPosts = getAllPosts(false).map(({ content, ...meta }) => meta);

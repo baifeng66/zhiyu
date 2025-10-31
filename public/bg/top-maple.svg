@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 300" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="leafGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff9f6e"/>
+      <stop offset="100%" stop-color="#ff6b6b"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff3e6"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <g id="leaf">
+      <path d="M0,-18 C-6,-18 -8,-12 -10,-6 C-14,-2 -14,2 -10,6 C-12,12 -10,16 -4,18 C-2,22 2,22 6,18 C12,18 14,12 16,6 C20,2 20,-2 16,-6 C14,-12 12,-16 6,-18 C2,-22 -2,-22 -4,-18 Z" fill="url(#leafGrad)" opacity="0.9"/>
+    </g>
+  </defs>
+  <rect width="1440" height="300" fill="url(#sky)"/>
+  <g transform="translate(80,40)">
+    <use href="#leaf" transform="translate(0,0) rotate(-12)"/>
+    <use href="#leaf" transform="translate(120,20) rotate(8) scale(1.1)"/>
+    <use href="#leaf" transform="translate(240,10) rotate(-4) scale(0.9)"/>
+    <use href="#leaf" transform="translate(360,30) rotate(6)"/>
+    <use href="#leaf" transform="translate(520,5) rotate(-14) scale(1.2)"/>
+    <use href="#leaf" transform="translate(700,15) rotate(10)"/>
+    <use href="#leaf" transform="translate(860,0) rotate(-8)"/>
+    <use href="#leaf" transform="translate(1040,25) rotate(12) scale(0.95)"/>
+    <use href="#leaf" transform="translate(1200,8) rotate(-6)"/>
+  </g>
+  <g transform="translate(40,110)" opacity="0.6">
+    <use href="#leaf" transform="translate(0,0) rotate(8)"/>
+    <use href="#leaf" transform="translate(200,20) rotate(-6)"/>
+    <use href="#leaf" transform="translate(380,0) rotate(10)"/>
+    <use href="#leaf" transform="translate(560,18) rotate(-12)"/>
+    <use href="#leaf" transform="translate(760,12) rotate(6)"/>
+    <use href="#leaf" transform="translate(940,0) rotate(-8)"/>
+    <use href="#leaf" transform="translate(1120,16) rotate(10)"/>
+    <use href="#leaf" transform="translate(1320,4) rotate(-6)"/>
+  </g>
+</svg>

@@ -6,12 +6,14 @@ interface TagCloudProps {
   limit?: number;
   showCount?: boolean;
   className?: string;
+  compact?: boolean; // 紧凑模式：更小字号与间距
 }
 
 // 辅助函数：计算标签云的字体大小（基于文章数量）
-function getTagFontSize(count: number, maxCount: number): string {
-  const minSize = 0.85; // 最小字体大小 (rem)
-  const maxSize = 1.6; // 最大字体大小 (rem)
+function getTagFontSize(count: number, maxCount: number, opts?: { compact?: boolean }): string {
+  const compact = Boolean(opts?.compact);
+  const minSize = compact ? 0.75 : 0.85; // 更小的基准字号
+  const maxSize = compact ? 1.2 : 1.6;   // 降低最大字号
 
   if (maxCount === 0) return `${minSize}rem`;
 
@@ -31,9 +33,20 @@ function getTagColorClass(count: number, maxCount: number): string {
   return 'tag-cool';
 }
 
-export default function TagCloud({ tags, limit = 50, showCount = true, className = '' }: TagCloudProps) {
+// 生成稳定颜色：基于标签名哈希映射到固定颜色类
+function getCompactColorClass(name: string, colorCount = 8): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash << 5) - hash + name.charCodeAt(i);
+    hash |= 0; // 转32位整数
+  }
+  const idx = Math.abs(hash) % colorCount; // 0..colorCount-1
+  return `tag-compact-c${idx + 1}`;
+}
+
+export default function TagCloud({ tags, limit = 50, showCount = true, className = '', compact = false }: TagCloudProps) {
   const limitedTags = tags.slice(0, limit);
-  const maxCount = limitedTags.length > 0 ? limitedTags[0].count : 1;
+  const maxCount = limitedTags.length > 0 ? Math.max(...limitedTags.map(t => t.count)) : 1;
 
   if (limitedTags.length === 0) {
     return (
@@ -47,14 +60,14 @@ export default function TagCloud({ tags, limit = 50, showCount = true, className
     <div className={`tag-cloud ${className}`}>
       <div className="tag-cloud-content">
         {limitedTags.map((tag) => {
-          const fontSize = getTagFontSize(tag.count, maxCount);
-          const colorClass = getTagColorClass(tag.count, maxCount);
+          const fontSize = getTagFontSize(tag.count, maxCount, { compact });
+          const colorClass = compact ? getCompactColorClass(tag.name) : getTagColorClass(tag.count, maxCount);
 
           return (
             <Link
               key={tag.name}
-              href={`/tags/${encodeURIComponent(tag.name)}`}
-              className={`tag-item ${colorClass}`}
+              href={compact && tag.name.toLowerCase() === 'show all' ? '/archives' : `/archives?tag=${encodeURIComponent(tag.name)}`}
+              className={`tag-item ${compact ? 'tag-compact' : ''} ${colorClass}`}
               style={{ fontSize }}
               title={`${tag.name} (${tag.count} 篇文章)`}
             >

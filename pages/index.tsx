@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Head from "next/head";
 import { GetStaticProps } from "next";
-import { getAllPosts, PostMeta } from "../lib/posts";
+import type { PostMeta } from "../lib/posts";
 import { canonicalUrl, websiteJsonLd } from "../lib/meta";
 import { siteConfig } from "../lib/site.config";
 import { useEffect, useState } from "react";
-import { FaMoon, FaSun, FaSearch, FaTimes } from "react-icons/fa";
+import { FaMoon, FaSun, FaSearch, FaTimes, FaMagic } from "react-icons/fa";
+import { format } from "date-fns";
 import BackToTop from "../components/BackToTop";
 import SearchBar from "../components/SearchBar";
 import DailyQuote from "../components/DailyQuote";
@@ -20,6 +21,7 @@ export default function Home({ posts, searchPosts }: Props) {
   const url = canonicalUrl("/");
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [bgOn, setBgOn] = useState(false);
 
   // 初始化主题
   useEffect(() => {
@@ -28,6 +30,9 @@ export default function Home({ posts, searchPosts }: Props) {
     const initialTheme = savedTheme || systemTheme;
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
+
+    // 初始化背景特效模式
+    setBgOn(localStorage.getItem('bgEffectEnabled') === 'true');
   }, []);
 
   // 切换主题
@@ -36,6 +41,14 @@ export default function Home({ posts, searchPosts }: Props) {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
+  };
+
+  // 背景特效开/关（开启后混合随机掉落三种粒子）
+  const toggleBg = () => {
+    const enabled = !(localStorage.getItem('bgEffectEnabled') === 'true');
+    localStorage.setItem('bgEffectEnabled', String(enabled));
+    setBgOn(enabled);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('bg-effect-changed'));
   };
 
   return (
@@ -54,12 +67,14 @@ export default function Home({ posts, searchPosts }: Props) {
         <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed.xml" />
       </Head>
       <header className="site-header">
-        <div className="site-title"><Link href="/">{siteConfig.title}</Link></div>
+        <div className="site-title">
+          <img src="/favicon.svg" alt="网站图标" className="site-logo" />
+          <Link href="/">{siteConfig.title}</Link>
+        </div>
         <div className="site-header-controls">
           <nav className="site-nav">
             <Link href="/">首页</Link>
             <Link href="/archives">归档</Link>
-            <Link href="/tags">标签</Link>
             <Link href="/about">关于</Link>
             <button
               className="search-trigger"
@@ -76,6 +91,14 @@ export default function Home({ posts, searchPosts }: Props) {
           >
             {theme === 'light' ? <FaMoon /> : <FaSun />}
           </button>
+          <button
+            className="bg-toggle"
+            onClick={toggleBg}
+            aria-label="切换背景特效"
+            title={bgOn ? '关闭背景特效' : '开启背景特效（低频柔和）'}
+          >
+            <FaMagic />
+          </button>
         </div>
       </header>
       <main>
@@ -90,39 +113,33 @@ export default function Home({ posts, searchPosts }: Props) {
 
               <div className="post-card-content">
                 {p.description ? (
-                  <p className="post-card-excerpt">
-                    {p.description}
-                  </p>
+                  <p className="post-card-excerpt">{p.description}</p>
                 ) : (
-                  <p className="post-card-excerpt">
-                    点击查看完整内容...
-                  </p>
+                  <p className="post-card-excerpt">点击查看完整内容...</p>
                 )}
               </div>
 
-              <div className="post-card-meta">
-                <time className="post-card-date">
-                  {new Date(p.date).toLocaleDateString('zh-CN', {
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </time>
-              </div>
-
-              {p.tags && p.tags.length > 0 && (
-                <div className="post-card-tags">
-                  {p.tags.slice(0, 2).map((tag, index) => (
-                    <span key={index} className="post-card-tag">
-                      {tag}
-                    </span>
-                  ))}
+              {/* 紧凑信息栏：日期 / 标签 / 阅读更多 一行展示 */}
+              <div className="post-card-meta-row">
+                <div className="post-card-meta-left">
+                  <time className="post-card-date">
+                    {format(new Date(p.date), "yyyy年 MM月dd日")}
+                  </time>
+                  {p.tags && p.tags.length > 0 && (
+                    <div className="post-card-tags-inline">
+                      {p.tags.slice(0, 2).map((tag, index) => (
+                        <span key={index} className="post-card-tag">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-
-              <div className="post-card-footer">
-                <Link href={`/post/${p.uuid}`} className="read-more-btn">
-                  阅读更多 →
-                </Link>
+                <div className="post-card-meta-right">
+                  <Link href={`/post/${p.uuid}`} className="read-more-btn">
+                    阅读更多 →
+                  </Link>
+                </div>
               </div>
             </article>
           ))}
@@ -168,9 +185,9 @@ export default function Home({ posts, searchPosts }: Props) {
 }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
+  const { getAllPosts } = await import("../lib/posts");
   const allPosts = getAllPosts(false);
   const posts = allPosts.map(({ content, ...meta }) => meta);
   const searchPosts = allPosts.map(({ content, ...meta }) => meta); // 用于搜索的数据
   return { props: { posts, searchPosts } };
 };
-

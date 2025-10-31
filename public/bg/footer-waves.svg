@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 240" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="wave" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#87CEEB"/>
+      <stop offset="100%" stop-color="#4A90E2"/>
+    </linearGradient>
+    <linearGradient id="foam" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="240" fill="#E0F6FF"/>
+  <path d="M0 120 Q 180 100 360 120 T 720 120 T 1080 120 T 1440 120 V 240 H 0 Z" fill="url(#wave)" opacity="0.9"/>
+  <path d="M0 140 Q 180 120 360 140 T 720 140 T 1080 140 T 1440 140 V 240 H 0 Z" fill="url(#wave)" opacity="0.7"/>
+  <path d="M0 160 Q 180 140 360 160 T 720 160 T 1080 160 T 1440 160 V 240 H 0 Z" fill="url(#wave)" opacity="0.55"/>
+  <path d="M0 118 Q 180 98 360 118 T 720 118 T 1080 118 T 1440 118" stroke="url(#foam)" stroke-width="6" fill="none"/>
+</svg>
